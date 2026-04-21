@@ -1,0 +1,63 @@
+import * as THREE from 'three';
+
+export class Track {
+    constructor(scene) {
+        this.scene = scene;
+        this.createEnvironment();
+        this.createCircuit();
+    }
+
+    createEnvironment() {
+        // Chão (Grama)
+        const groundGeom = new THREE.PlaneGeometry(1000, 1000);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+        const ground = new THREE.Mesh(groundGeom, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Céu
+        this.scene.background = new THREE.Color(0x87ceeb);
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 20, 10);
+        this.scene.add(new THREE.AmbientLight(0x404040));
+        this.scene.add(light);
+    }
+
+    createCircuit() {
+        // Criar uma pista em formato de 'O' oval
+        const trackPath = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0.05, 0),
+            new THREE.Vector3(50, 0.05, 50),
+            new THREE.Vector3(100, 0.05, 0),
+            new THREE.Vector3(100, 0.05, -100),
+            new THREE.Vector3(50, 0.05, -150),
+            new THREE.Vector3(0, 0.05, -100),
+            new THREE.Vector3(-50, 0.05, -50),
+        ], true);
+
+        const trackGeom = new THREE.TubeGeometry(trackPath, 100, 8, 12, true);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x333333, side: THREE.DoubleSide });
+        const track = new THREE.Mesh(trackGeom, trackMat);
+        track.scale.y = 0.1; // Achatar o tubo para parecer uma estrada
+        this.scene.add(track);
+
+        // Zebras (detalhes brancos e vermelhos)
+        this.addCurbs(trackPath);
+    }
+
+    addCurbs(path) {
+        // Lógica simplificada para adicionar marcadores na pista
+        const points = path.getPoints(200);
+        points.forEach((p, i) => {
+            if (i % 5 === 0) {
+                const curbGeom = new THREE.BoxGeometry(10, 0.1, 1);
+                const curbMat = new THREE.MeshStandardMaterial({ color: i % 10 === 0 ? 0xffffff : 0xff0000 });
+                const curb = new THREE.Mesh(curbGeom, curbMat);
+                curb.position.copy(p);
+                curb.lookAt(path.getPoint((i + 1) % 200));
+                this.scene.add(curb);
+            }
+        });
+    }
+}
